@@ -2,8 +2,8 @@ import collections
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import fsolve
-from sklearn.linear_model import Ridge
-from scipy.special import expit
+import regression as r 
+
 
 
 class HillTypeMuscle:
@@ -61,10 +61,10 @@ def get_velocity(a, lm, lt):
     B = 0.1 # damping coefficient (see damped model in Millard et al.)
 
     def f(vm, a, lm, lt):
-        Fv = force_velocity_muscle(vm)
+        Fv = r.force_velocity_muscle(vm)
         Ft = force_length_tendon(lt)
         Fp = force_length_parallel(lm)
-        Fl = force_length_muscle(lm)
+        Fl = r.force_length_muscle(lm)
         
         return (a*Fl*Fv + Fp + B*vm)-Ft
             
@@ -82,10 +82,10 @@ def get_velocity_single_val(a, lm, lt):
     B = 0.1 # damping coefficient (see damped model in Millard et al.)
 
     def f(vm, a, lm, lt):
-        Fv = force_velocity_muscle(vm)
+        Fv = r.force_velocity_muscle(vm)
         Ft = force_length_tendon_single_val(lt)
         Fp = force_length_parallel_single_val(lm)
-        Fl = force_length_muscle(lm)
+        Fl = r.force_length_muscle(lm)
         
         return (a*Fl*Fv + Fp + B*vm)-Ft
             
@@ -154,14 +154,14 @@ def plot_curves():
     vm = np.arange(-1.2, 1.2, .01)
     lt = np.arange(0, 1.07, .01)
     plt.subplot(2,1,1)
-    plt.plot(lm, force_length_muscle(lm), 'r')
+    plt.plot(lm, r.force_length_muscle(lm), 'r')
     plt.plot(lm, force_length_parallel(lm), 'g')
     plt.plot(lt, force_length_tendon(lt), 'b')
     plt.legend(('CE', 'PE', 'SE'))
     plt.xlabel('Normalized length')
     plt.ylabel('Force scale factor')
     plt.subplot(2, 1, 2)
-    plt.plot(vm, force_velocity_muscle(vm), 'k')
+    plt.plot(vm, r.force_velocity_muscle(vm), 'k')
     plt.xlabel('Normalized muscle velocity')
     plt.ylabel('Force scale factor')
     plt.tight_layout()
