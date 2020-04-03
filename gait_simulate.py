@@ -36,7 +36,7 @@ GRAVITY = 9.81 # N/kg
 
 
 class GaitSimulator:
-    def __init__(self, N, footDrop=False, fes=False, Kp=0, Kd=0):
+    def __init__(self, footDrop=False, fes=False, Kp=0, Kd=0):
         """
         :param N: number of gait cycles to simulate for 
         :param footDrop: boolean flag for foot drop simulation
@@ -45,7 +45,6 @@ class GaitSimulator:
         :param Kd: derivative gain for FES control
         """
         # CLASS ATTRIBUTES
-        self.N = N
         self.footDrop = footDrop 
         self.fes = fes 
         self.Kp = Kp 
@@ -150,6 +149,7 @@ class GaitSimulator:
         l_tendon_norm_tibialis = self.tibialis.norm_tendon_length(l_tibialis, l_ce_norm_tibialis)
         torque_soleus = force_length_tendon_single_val(l_tendon_norm_soleus) * F_MAX_SOLEUS * MOMENT_ARM_SOLEUS
         torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * MOMENT_ARM_TIBIALIS
+        # print(l_ce_norm_soleus)
 
         # derivative of state: 
         xd = [0, 0, 0, 0, 0, 0]
@@ -175,7 +175,6 @@ class GaitSimulator:
         """
         print("\n\n * * * * STARTING NEW SIMULATION * * * * ")
         print("\nParameters:")
-        print("Number of gait cycles = {}".format(self.N))
         print("Foot Drop = {}".format(self.footDrop))
         print("FES = {}".format(self.fes))
         if(self.fes):
@@ -185,8 +184,6 @@ class GaitSimulator:
         def f(t, x):
             return self.dynamics(x, t)
 
-        T = self.N * CYCLE_PERIOD
-        x0 = [np.pi/2, 0, 0, 0, 1, 1] # TODO: initial values need to be determined 
         """
         state = [
                     shank-foot angle, 
@@ -197,13 +194,21 @@ class GaitSimulator:
                     normalized CE length of tibialis
                 ]
         """
+        t0 = 0.6*CYCLE_PERIOD
+        H0 = r.hip_angle(t0)
+        th0 = r.knee_angle(t0) - H0
+        h_ankle = HIP_HEIGHT - np.cos(np.pi - H0)*THIGH_LENGTH - SHANK_LENGTH*np.cos(th0)
+        beta0 = 1/np.sin(h_ankle/FOOT_LENGTH) - th0 - np.pi/2
+
+        x0 = [beta0, 0, -th0, 0, 1, 1] # TODO: initial values need to be determined 
         sol = solve_ivp(
                         f, 
-                        [0, T], 
+                        [t0, CYCLE_PERIOD], 
                         x0, 
                         # rtol=1e-5, 
                         # atol=1e-8
                     )
+
         self.get_outputs(sol)
 
     def get_outputs(self, sol):
@@ -212,6 +217,7 @@ class GaitSimulator:
         :return plots of outputs 
         """
         time = sol.t
+        print(time)
         beta = sol.y[0,:]
         d_beta = sol.y[1,:]
         theta = sol.y[2,:]
