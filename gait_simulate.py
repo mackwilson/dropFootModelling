@@ -28,10 +28,10 @@ HIP_HEIGHT = 1.158 # m
 D_COM_THIGH_KNEE = 0.343 # m
 D_COM_SHANK_ANKLE = 0.314 # m
 D_COM_FOOT_ANKLE = 0.130 # m
-MASS_FOOT = 1 # kg
-MASS_SHANK = 1 # kg
-MASS_THIGH = 1 # kg
-MASS_TORSO = 50 # kg 
+MASS_FOOT = 1.03 # kg
+MASS_SHANK = 3.45 # kg
+MASS_THIGH = 8.45 # kg
+MASS_TORSO = 50.42 # kg 
 GRAVITY = 9.81 # N/kg
 
 
@@ -235,8 +235,8 @@ class GaitSimulator:
         for t, b, d_b, th, d_th, ls, lt in zip(time, beta, d_beta, theta, d_theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
             soleus_moment.append(MOMENT_ARM_SOLEUS * self.soleus.get_force_single_val(soleus_length(b), ls))
             tibialis_moment.append(-MOMENT_ARM_TIBIALIS * self.tibialis.get_force_single_val(tibialis_length(b), lt))
-            ankle_height.append(np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH + SHANK_LENGTH*np.cos(th))
-            toe_height.append(np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH + SHANK_LENGTH*np.cos(th) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
+            ankle_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(th))
+            toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(th) - FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
             excit_soleus.append(self.get_soleus_excitation(t, b, th, d_b, d_th))
             excit_tibialis.append(self.get_tibialis_excitation(t, b, th, d_b, d_th))
             act_soleus.append(self.get_soleus_activation(t, b, th, d_b, d_th)[0])
@@ -262,7 +262,8 @@ class GaitSimulator:
         plt.plot(time, soleus_moment, 'r')
         plt.plot(time, tibialis_moment, 'g')
         plt.plot(time, grav_ankle_moment, 'k')
-        plt.legend(('soleus', 'tibialis', 'gravity'))
+        plt.plot(time, np.add(np.add(tibialis_moment, soleus_moment), grav_ankle_moment), 'b')
+        plt.legend(('soleus', 'tibialis', 'gravity', 'total moment'))
         plt.xlabel('Time (s)')
         plt.ylabel('Torques (Nm)')
         # plt.ylim(-3, 4)
