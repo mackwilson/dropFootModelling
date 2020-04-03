@@ -229,6 +229,8 @@ class GaitSimulator:
         excit_soleus = []
         excit_tibialis = []
 
+        print("Number of data points = {}".format(len(time)))
+
         print("\nFinding outputs...")
         for t, b, d_b, th, d_th, ls, lt in zip(time, beta, d_beta, theta, d_theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
             soleus_moment.append(MOMENT_ARM_SOLEUS * self.soleus.get_force_single_val(soleus_length(b), ls))
@@ -237,7 +239,7 @@ class GaitSimulator:
             toe_height.append(np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH + SHANK_LENGTH*np.cos(th) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
             excit_soleus.append(self.get_soleus_excitation(t, b, th, d_b, d_th))
             excit_tibialis.append(self.get_tibialis_excitation(t, b, th, d_b, d_th))
-            act_soleus.append(self.get_soleus_activation(t, b, th, d_b, d_th))
+            act_soleus.append(self.get_soleus_activation(t, b, th, d_b, d_th)[0])
             act_tibialis.append(self.get_tibialis_activation(t, b, th, d_b, d_th))
             grav_ankle_moment.append(gravity_moment_ankle(b, th, r.hip_angle(t)))
 
