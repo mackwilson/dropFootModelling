@@ -313,12 +313,15 @@ def get_hip_angle_regression():
     
     x = data[:,0]
     y = data[:,1]
-    #Normalize x to be from 0 to 1.7 instead of 0 to 100% gait cycle
-    ratio = 1.7/100
-    norm_x = [i * ratio for i in x]
+    #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
+    #Convert y from degrees to radians
+    ratio_x = 1.7/100
+    ratio_y = np.pi/180
+    norm_x = [i * ratio_x for i in x]   
+    norm_y = [j * ratio_y for j in y]
     
     degree = 6
-    result = Polynomial_Regression(norm_x,y,degree)
+    result = Polynomial_Regression(norm_x,norm_y,degree)
     return result
 
 def get_hip_torque_regression():
@@ -410,12 +413,16 @@ def get_knee_angle_regression():
         ])
     x = data[:,0]
     y = data[:,1]
+    
     #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
-    ratio = 1.7/100
-    norm_x = [i * ratio for i in x]   
+    #Convert y from degrees to radians
+    ratio_x = 1.7/100
+    ratio_y = np.pi/180
+    norm_x = [i * ratio_x for i in x]   
+    norm_y = [j*ratio_y for j in y]
     
     degree = 8
-    result = Polynomial_Regression(norm_x,y,degree)
+    result = Polynomial_Regression(norm_x,norm_y,degree)
     return result
 
 def get_knee_torque_regression():
