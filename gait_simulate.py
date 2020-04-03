@@ -157,10 +157,11 @@ class GaitSimulator:
         vm_soleus = get_velocity_single_val(activation_soleus, l_ce_norm_soleus, l_tendon_norm_soleus)
         vm_tibialis = get_velocity_single_val(activation_tibialis, l_ce_norm_tibialis, l_tendon_norm_tibialis)
 
+
         # derivative of state: 
         xd = [0, 0, 0, 0]
         xd[0] = d_beta
-        xd[1] = (torque_tibant - torque_soleus - gravity_moment_ankle(beta, theta, H)) / I_ANKLE 
+        xd[1] = -(torque_tibant - torque_soleus - gravity_moment_ankle(beta, theta, H)) / 0.5
         xd[2] = vm_soleus
         xd[3] = vm_tibialis
         return xd
@@ -240,8 +241,13 @@ class GaitSimulator:
 
         print("\nFinding outputs...")
         for t, b, d_b, th, ls, lt in zip(time, beta, d_beta, theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
-            soleus_moment.append(-MOMENT_ARM_SOLEUS * self.soleus.get_force_single_val(soleus_length(b), ls)*self.get_soleus_activation(t, b, d_b, th))
-            tibialis_moment.append(MOMENT_ARM_TIBIALIS * self.tibialis.get_force_single_val(tibialis_length(b), lt)*self.get_tibialis_activation(t, b, d_b, th))
+            l_tendon_norm_soleus = self.soleus.norm_tendon_length(soleus_length(b), ls)
+            l_tendon_norm_tibialis = self.tibialis.norm_tendon_length(tibialis_length(b), lt)
+            torque_soleus = force_length_tendon_single_val(l_tendon_norm_soleus) * F_MAX_SOLEUS * self.get_soleus_activation(t, b, d_b, th) * MOMENT_ARM_SOLEUS
+            torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * self.get_tibialis_activation(t, b, d_b, th) * MOMENT_ARM_TIBIALIS
+            
+            soleus_moment.append(-torque_soleus)
+            tibialis_moment.append(torque_tibant)
             ankle_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)))
             toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
             excit_soleus.append(self.get_soleus_excitation(t, b, d_b, th))
@@ -346,7 +352,7 @@ def gravity_moment_ankle(beta, theta, H):
     :return moment about ankle due to force of gravity on body
     """
     torso_moment = MASS_TORSO*GRAVITY*(THIGH_LENGTH*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
-    foot_moment = MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.sin(beta - theta - np.pi/2)
+    foot_moment = MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.cos(beta - theta - np.pi/2)
     shank_moment = MASS_SHANK*GRAVITY*D_COM_SHANK_ANKLE*np.sin(theta)
     thigh_moment = MASS_THIGH*GRAVITY*(D_COM_THIGH_KNEE*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
     # return -foot_moment + (shank_moment + thigh_moment + thigh_moment)
