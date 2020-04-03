@@ -69,8 +69,7 @@ class Polynomial_Regression():
         yprime = np.polyval(self.powers, x)
         plt.plot(x,yprime)
         plt.show()
-        return yprime     
-
+        return yprime 
 
 def get_muscle_force_velocity_regression():
     data = np.array([
@@ -164,10 +163,113 @@ def get_muscle_force_length_regression():
     return result
 
 def get_tibialis_activation_regression():
-    pass
+    data = np.array([
+        [0, 2.571428571428555],
+        [1.6783216783216517, 2.714285714285708],
+        [3.916083916083892, 2.571428571428555],
+        [6.15384615384616, 2.2857142857142634],
+        [8.391608391608372, 1.857142857142847],
+        [11.748251748251732, 1.2857142857142776],
+        [14.545454545454561, 0.9999999999999858],
+        [17.902097902097893, 0.9999999999999858],
+        [20.699300699300693, 0.9999999999999858],
+        [22.937062937062933, 1.1428571428571246],
+        [25.734265734265733, 0.9999999999999858],
+        [29.090909090909065, 0.714285714285694],
+        [32.447552447552454, 0.5714285714285552],
+        [35.804195804195786, 0.4285714285714022],
+        [38.601398601398586, 0.5714285714285552],
+        [41.958041958041946, 0.5714285714285552],
+        [45.314685314685306, 0.5714285714285552],
+        [48.671328671328666, 0.5714285714285552],
+        [52.02797202797203, 0.2857142857142634],
+        [54.8251748251748, 0.2857142857142634],
+        [57.62237762237763, 0.4285714285714022],
+        [59.30069930069931, 0.714285714285694],
+        [61.53846153846152, 0.9999999999999858],
+        [64.33566433566435, 1.4285714285714164],
+        [68.25174825174827, 1.5714285714285694],
+        [71.6083916083916, 1.4285714285714164],
+        [74.96503496503499, 1.1428571428571246],
+        [77.76223776223776, 0.9999999999999858],
+        [80.55944055944056, 0.9999999999999858],
+        [83.35664335664336, 0.9999999999999858],
+        [85.5944055944056, 0.9999999999999858],
+        [87.83216783216784, 0.9999999999999858],
+        [91.1888111888112, 0.9999999999999858],
+        [93.42657342657344, 1.1428571428571246],
+        [95.10489510489509, 1.4285714285714164],
+        [96.78321678321677, 1.714285714285694],
+        [99.02097902097904, 2.142857142857139]
+            ])
+    
+    x = data[:,0]
+    y = data[:,1]
+    max_val = max(y)
+    min_val = min(y)
+    #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]   
+    norm_y = [(j-min_val+0.005)/(max_val-min_val) for j in y]
+    
+    #Normalize y to be from 0 to 1 to estimate muscle activation from EMG
+    degree = 5
+    result = Polynomial_Regression(norm_x,norm_y,degree)
+    return result
 
 def get_soleus_activation_regression():
-    pass
+    data = np.array([
+        [0, 0.6153846153846132],
+        [3.3707865168539115, 0.6153846153846132],
+        [6.179775280898866, 0.7692307692307736],
+        [9.550561797752806, 0.7692307692307736],
+        [13.483146067415703, 1.0769230769230802],
+        [16.853932584269643, 1.3846153846153868],
+        [20.224719101123583, 1.3846153846153868],
+        [23.033707865168537, 1.3846153846153868],
+        [25.842696629213464, 1.3846153846153868],
+        [28.089887640449433, 1.3846153846153868],
+        [30.337078651685374, 1.53846153846154],
+        [32.58426966292134, 1.8461538461538467],
+        [35.39325842696627, 2.1538461538461533],
+        [38.202247191011224, 2.46153846153846],
+        [41.01123595505618, 2.7692307692307665],
+        [43.820224719101105, 2.92307692307692],
+        [46.067415730337046, 2.92307692307692],
+        [48.87640449438203, 2.615384615384613],
+        [51.12359550561797, 2.1538461538461533],
+        [54.49438202247188, 1.3846153846153868],
+        [57.303370786516865, 0.6153846153846132],
+        [60.11235955056179, 0.3076923076923066],
+        [62.92134831460672, 0.3076923076923066],
+        [65.73033707865167, 0.3076923076923066],
+        [69.6629213483146, 0.3076923076923066],
+        [72.47191011235952, 0.3076923076923066],
+        [76.40449438202248, 0.3076923076923066],
+        [80.33707865168537, 0.3076923076923066],
+        [83.14606741573033, 0.3076923076923066],
+        [85.95505617977528, 0.3076923076923066],
+        [89.3258426966292, 0.3076923076923066]
+            ])
+    
+    x = data[:,0]
+    y = data[:,1]
+    max_val = max(y)
+    min_val = min(y)
+    #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]   
+
+    #Normalize y to be from 0 to 1 to estimate muscle activation from EMG
+    norm_y = [(j-min_val+0.005)/(max_val-min_val) for j in y]
+    
+    step = .02
+    centres = np.arange(np.min(norm_x), np.max(norm_x), step)
+    width = 0.05
+    weight = 0.1
+    result = Regression(norm_x, norm_y, centres, width, weight, sigmoids=True)
+    return result 
+    
 
 def get_hip_angle_regression():
     data = np.array([
@@ -211,11 +313,12 @@ def get_hip_angle_regression():
     
     x = data[:,0]
     y = data[:,1]
-    #Normalize x to be from 0 to time_step instead of 0 to 100% gait cycle
-    #TO DO ONCE VALUE IS FOUND (x/100 * time)
+    #Normalize x to be from 0 to 1.7 instead of 0 to 100% gait cycle
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]
     
     degree = 6
-    result = Polynomial_Regression(x,y,degree)
+    result = Polynomial_Regression(norm_x,y,degree)
     return result
 
 def get_hip_torque_regression():
@@ -260,11 +363,11 @@ def get_hip_torque_regression():
             ])
     x = data[:,0]
     y = data[:,1]
-    #Normalize x to be from 0 to time_step instead of 0 to 100% gait cycle
-    #TO DO ONCE VALUE IS FOUND (x/100 * time)
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]   
     
     degree = 8
-    result = Polynomial_Regression(x,y,degree)
+    result = Polynomial_Regression(norm_x,y,degree)
     return result
 
 def get_knee_angle_regression():        
@@ -307,11 +410,12 @@ def get_knee_angle_regression():
         ])
     x = data[:,0]
     y = data[:,1]
-    #Normalize x to be from 0 to time_step instead of 0 to 100% gait cycle
-    #TO DO ONCE VALUE IS FOUND (x/100 * time)
+    #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]   
     
     degree = 8
-    result = Polynomial_Regression(x,y,degree)
+    result = Polynomial_Regression(norm_x,y,degree)
     return result
 
 def get_knee_torque_regression():
@@ -352,11 +456,12 @@ def get_knee_torque_regression():
     
     x = data[:,0]
     y = data[:,1]
-    #Normalize x to be from 0 to time_step instead of 0 to 100% gait cycle
-    #TO DO ONCE VALUE IS FOUND (x/100 * time)
+    #Normalize x to be from 0 to 1.7 instead of 0 to 100% gait cycle
+    ratio = 1.7/100
+    norm_x = [i * ratio for i in x]   
     
     degree = 5
-    result = Polynomial_Regression(x,y,degree)
+    result = Polynomial_Regression(norm_x,y,degree)
     return result
 
 
