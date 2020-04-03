@@ -322,7 +322,7 @@ def get_hip_angle_regression():
     ratio_x = 1.7/100
     ratio_y = np.pi/180
     norm_x = [i * ratio_x for i in x]   
-    norm_y = [(180 + j) * ratio_y for j in y]
+    norm_y = [(180 - j) * ratio_y for j in y]
     
     degree = 6
     result = Polynomial_Regression(norm_x,norm_y,degree)
