@@ -74,7 +74,7 @@ class GaitSimulator:
         :param d_theta: derivative of theta
         :return the practical soleus activation for the type of simulation
         """
-        a = r.soleus_activation(t)
+        a = r.soleus_activation(t)[0]
 
         return a
 
@@ -240,13 +240,13 @@ class GaitSimulator:
 
         print("\nFinding outputs...")
         for t, b, d_b, th, ls, lt in zip(time, beta, d_beta, theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
-            soleus_moment.append(-MOMENT_ARM_SOLEUS * self.soleus.get_force_single_val(soleus_length(b), ls)*self.get_soleus_activation(t, b, d_b, th)[0])
+            soleus_moment.append(-MOMENT_ARM_SOLEUS * self.soleus.get_force_single_val(soleus_length(b), ls)*self.get_soleus_activation(t, b, d_b, th))
             tibialis_moment.append(MOMENT_ARM_TIBIALIS * self.tibialis.get_force_single_val(tibialis_length(b), lt)*self.get_tibialis_activation(t, b, d_b, th))
             ankle_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)))
             toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
             excit_soleus.append(self.get_soleus_excitation(t, b, d_b, th))
             excit_tibialis.append(self.get_tibialis_excitation(t, b, d_b, th))
-            act_soleus.append(self.get_soleus_activation(t, b, d_b, th)[0])
+            act_soleus.append(self.get_soleus_activation(t, b, d_b, th))
             act_tibialis.append(self.get_tibialis_activation(t, b, d_b, th))
             grav_ankle_moment.append(gravity_moment_ankle(b, th, r.hip_angle(t)))
 
