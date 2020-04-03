@@ -322,7 +322,7 @@ def get_hip_angle_regression():
     ratio_x = 1.7/100
     ratio_y = np.pi/180
     norm_x = [i * ratio_x for i in x]   
-    norm_y = [(np.pi + j) * ratio_y for j in y]
+    norm_y = [(180 + j) * ratio_y for j in y]
     
     degree = 6
     result = Polynomial_Regression(norm_x,norm_y,degree)
@@ -393,7 +393,6 @@ def get_knee_angle_regression():
         [27.610619469026553, 5.555555555555543],
         [30.08849557522123, 2.2222222222222285],
         [32.92035398230088, 1.1111111111111427],
-        [35.752212389380524, -1.1111111111111427],
         [38.584070796460175, 0],
         [41.769911504424776, 0],
         [44.24778761061946, 1.1111111111111427],
@@ -412,7 +411,6 @@ def get_knee_angle_regression():
         [83.18584070796459, 24.444444444444457],
         [86.72566371681415, 12.222222222222229],
         [91.32743362831859, 1.1111111111111427],
-        [96.63716814159292, -1.1111111111111427],
         [98.76106194690264, 1.1111111111111427]
         ])
     x = data[:,0]
@@ -424,7 +422,7 @@ def get_knee_angle_regression():
     ratio_x = 1.7/100
     ratio_y = np.pi/180
     norm_x = [i * ratio_x for i in x]   
-    norm_y = [(np.pi - j)*ratio_y for j in y]
+    norm_y = [(180 - j)*ratio_y for j in y]
     
     degree = 8
     result = Polynomial_Regression(norm_x,norm_y,degree)
