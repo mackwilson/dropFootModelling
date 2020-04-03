@@ -67,9 +67,13 @@ class Polynomial_Regression():
         
     def eval(self, x):
         yprime = np.polyval(self.powers, x)
+        return yprime 
+    
+    def plot(self, x):
+        yprime = np.polyval(self.powers, x)
         plt.plot(x,yprime)
         plt.show()
-        return yprime 
+
 
 def get_muscle_force_velocity_regression():
     data = np.array([
