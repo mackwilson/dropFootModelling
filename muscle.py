@@ -165,5 +165,5 @@ def plot_curves():
     plt.xlabel('Normalized muscle velocity')
     plt.ylabel('Force scale factor')
     plt.tight_layout()
-    plt.show()
+    plt.savefig("outputs/hilltypemuscle.png")
 

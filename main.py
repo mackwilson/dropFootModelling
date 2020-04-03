@@ -1,4 +1,5 @@
-import gait_simulate
+from gait_simulate import GaitSimulator 
 import muscle
 
-gait_simulate.simulate()
+g = GaitSimulator(1)
+g.simulate()
