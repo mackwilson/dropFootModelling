@@ -23,6 +23,7 @@ class HillTypeMuscle:
         self.f0M = f0M
         self.resting_length_muscle = resting_length_muscle
         self.resting_length_tendon = resting_length_tendon
+        plot_curves()
 
     def norm_tendon_length(self, muscle_tendon_length, normalized_muscle_length):
         """
@@ -105,7 +106,6 @@ def force_length_tendon(lt):
             normalized.append(0)
         else:
             normalized.append((10*(l - 1)) + (240 * (l - 1)**2))
-    
     return normalized
 
 def force_length_tendon_single_val(lt):
