@@ -269,7 +269,7 @@ class GaitSimulator:
 
         # plot results 
         plt.figure()
-        plt.title("Physical angles over the simulation")
+        plt.title("Physical angles for {} simulation".format(self.suffix()))
         plt.plot(time, beta, 'r')
         plt.plot(time, theta, 'g')
         plt.legend(('foot-shank (beta)', 'shank-vertical (theta)'))
@@ -278,7 +278,7 @@ class GaitSimulator:
         plt.savefig("outputs/angles_{}.png".format(self.suffix()))
 
         plt.figure()
-        plt.title("Moments around the ankle")
+        plt.title("Moments around the ankle for {} simulation".format(self.suffix()))
         plt.plot(time, soleus_moment, 'r')
         plt.plot(time, tibialis_moment, 'g')
         plt.plot(time, grav_ankle_moment, 'k')
@@ -291,7 +291,7 @@ class GaitSimulator:
         plt.savefig("outputs/moments_{}.png".format(self.suffix()))
 
         plt.figure()
-        plt.title("Height of body parts off the ground")
+        plt.title("Height off the ground for {} simulation".format(self.suffix()))
         plt.plot(time, toe_height, 'r')
         plt.plot(time, ankle_height, 'g')
         plt.legend(('toes', 'ankle'))
@@ -302,7 +302,7 @@ class GaitSimulator:
         plt.savefig("outputs/heights_{}.png".format(self.suffix()))
 
         plt.figure()
-        plt.title("Activations and excitations of muscles")
+        plt.title("Activations and excitations for {} simulation".format(self.suffix()))
         plt.plot(time, act_tibialis, 'r')
         plt.plot(time, act_soleus, 'g')
         plt.plot(time, excit_tibialis, 'b')
