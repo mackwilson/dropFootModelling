@@ -14,7 +14,7 @@ import regression as r
 
 # ******** GLOBAL CONSTANTS ********
 # TODO: UPDATE THESE ! Some are still missing 
-I_ANKLE = 90
+I_ANKLE = 20
 F_MAX_SOLEUS = 16000
 F_MAX_TIBIALIS = 2000
 MOMENT_ARM_SOLEUS = .048
@@ -156,13 +156,11 @@ class GaitSimulator:
         torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * activation_tibialis * MOMENT_ARM_TIBIALIS
         vm_soleus = get_velocity_single_val(activation_soleus, l_ce_norm_soleus, l_tendon_norm_soleus)
         vm_tibialis = get_velocity_single_val(activation_tibialis, l_ce_norm_tibialis, l_tendon_norm_tibialis)
-        # print(vm_soleus, vm_tibialis)
-        print(gravity_moment_ankle(beta, theta, H))
 
         # derivative of state: 
         xd = [0, 0, 0, 0]
         xd[0] = d_beta
-        xd[1] = (torque_tibant - torque_soleus + gravity_moment_ankle(beta, theta, H)) / I_ANKLE 
+        xd[1] = (torque_tibant - torque_soleus - gravity_moment_ankle(beta, theta, H)) / I_ANKLE 
         xd[2] = vm_soleus
         xd[3] = vm_tibialis
         return xd
@@ -348,10 +346,11 @@ def gravity_moment_ankle(beta, theta, H):
     :return moment about ankle due to force of gravity on body
     """
     torso_moment = MASS_TORSO*GRAVITY*(THIGH_LENGTH*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
-    foot_moment = MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.cos(np.pi/2 - beta + theta)
+    foot_moment = MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.sin(beta - theta - np.pi/2)
     shank_moment = MASS_SHANK*GRAVITY*D_COM_SHANK_ANKLE*np.sin(theta)
     thigh_moment = MASS_THIGH*GRAVITY*(D_COM_THIGH_KNEE*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
-    return -foot_moment + (shank_moment + thigh_moment + thigh_moment)
+    # return -foot_moment + (shank_moment + thigh_moment + thigh_moment)
+    return foot_moment
 
 
 def plot_regressions(t0, tf):
