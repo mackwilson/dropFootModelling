@@ -14,7 +14,7 @@ import regression as r
 
 # ******** GLOBAL CONSTANTS ********
 # TODO: UPDATE THESE ! Some are still missing 
-I_ANKLE = 10
+I_ANKLE = 90
 F_MAX_SOLEUS = 16000
 F_MAX_TIBIALIS = 2000
 MOMENT_ARM_SOLEUS = .048
