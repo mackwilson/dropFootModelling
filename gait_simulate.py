@@ -15,7 +15,6 @@ import regression as r
 # ******** GLOBAL CONSTANTS ********
 # TODO: UPDATE THESE ! Some are still missing 
 I_ANKLE = 90
-I_KNEE = 120
 F_MAX_SOLEUS = 16000
 F_MAX_TIBIALIS = 2000
 MOMENT_ARM_SOLEUS = .048
@@ -349,22 +348,6 @@ def gravity_moment_ankle(beta, theta, H):
     shank_moment = MASS_SHANK*GRAVITY*D_COM_SHANK_ANKLE*np.sin(theta)
     thigh_moment = MASS_THIGH*GRAVITY*(D_COM_THIGH_KNEE*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
     return -foot_moment + (torso_moment + shank_moment + thigh_moment)
-
-
-def gravity_moment_knee(beta, theta, H):
-    # note: if stuff isnt working, check that we dont also want thigh and torso in this equation
-    # note 2: can also check that the knee torques from regression model were measured with gravity too 
-    """
-    :param theta: angle of foot relative to shank
-    :param beta: angle of shank relative to vertical 
-    :param t: current time in seconds 
-    :return moment about knee due to force of gravity on body
-    """
-    foot_moment = MASS_FOOT*GRAVITY*(D_COM_FOOT_ANKLE*np.cos(np.pi/2 + theta - beta) + SHANK_LENGTH*np.sin(theta))
-    shank_moment = MASS_SHANK*GRAVITY*D_COM_SHANK_ANKLE*np.sin(theta)
-    torso_moment = MASS_TORSO*GRAVITY*THIGH_LENGTH*np.sin(np.pi - H)
-    thigh_moment = MASS_THIGH*GRAVITY*D_COM_THIGH_KNEE*np.sin(np.pi - H)
-    return  (foot_moment + shank_moment) + (torso_moment + thigh_moment)
 
 
 def plot_regressions(t0, tf):
