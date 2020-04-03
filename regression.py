@@ -322,7 +322,7 @@ def get_hip_angle_regression():
     ratio_x = 1.7/100
     ratio_y = np.pi/180
     norm_x = [i * ratio_x for i in x]   
-    norm_y = [j * ratio_y for j in y]
+    norm_y = [(np.pi + j) * ratio_y for j in y]
     
     degree = 6
     result = Polynomial_Regression(norm_x,norm_y,degree)
@@ -419,11 +419,12 @@ def get_knee_angle_regression():
     y = data[:,1]
     
     #Normalize x to be from 0 to 1.7s instead of 0 to 100% gait cycle
-    #Convert y from degrees to radians
+    #Convert y to general and not flexion/extension angle, then convert 
+    #from degrees to radians
     ratio_x = 1.7/100
     ratio_y = np.pi/180
     norm_x = [i * ratio_x for i in x]   
-    norm_y = [j*ratio_y for j in y]
+    norm_y = [(np.pi - j)*ratio_y for j in y]
     
     degree = 8
     result = Polynomial_Regression(norm_x,norm_y,degree)
