@@ -102,19 +102,21 @@ class GaitSimulator:
         :param beta: angle from foot to shank, used to calculate error from desired trajectory
         :return the applied excitation for the tibialis as an additional normalized activation  
         """
+        # if no fes, return 0 excitation applied
+        result = 0
         if self.fes:
             # apply excitation proportional to how much beta > pi/2 
             # this should drive beta to pi/2 
             err = beta - DESIRED_BETA_TRAJECTORY
-            self.last_error = err 
-            self.total_error = self.total_error + abs(err)
 
             # ** do nothing if beta <= pi/2 **
             if err > 0:
-                return self.Kp*err
+                result = self.Kp*err + self.Kd*(self.last_error - err) + self.Ki*self.total_error
 
-        # if no fes, return 0 excitation applied
-        return 0 
+            self.last_error = err 
+            self.total_error = self.total_error + abs(err)
+
+        return result 
 
 
     # - - - - -  DYNAMICS - - - - - - 
@@ -273,7 +275,6 @@ class GaitSimulator:
         plt.legend(('soleus', 'tibialis', 'gravity', 'total moment'))
         plt.xlabel('Time (s)')
         plt.ylabel('Torques (Nm)')
-        # plt.ylim(-3, 4)
         plt.tight_layout()
         plt.savefig("outputs/moments_{}.png".format(self.suffix()))
         plt.close()
@@ -285,7 +286,6 @@ class GaitSimulator:
         plt.legend(('toes', 'heel'))
         plt.xlabel('Time (s)')
         plt.ylabel('Height (m)')
-        # plt.ylim(0, 0.5)
         plt.tight_layout()
         plt.savefig("outputs/heights_{}.png".format(self.suffix()))
         plt.close()
