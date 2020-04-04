@@ -13,8 +13,7 @@ import regression as r
 
 
 # ******** GLOBAL CONSTANTS ********
-# TODO: UPDATE THESE ! Some are still missing 
-I_ANKLE = 20
+I_ANKLE = 0.5
 F_MAX_SOLEUS = 16000
 F_MAX_TIBIALIS = 2000
 MOMENT_ARM_SOLEUS = .048
@@ -34,8 +33,9 @@ MASS_TORSO = 50.42 # kg
 GRAVITY = 9.81 # N/kg
 
 
+
 class GaitSimulator:
-    def __init__(self, footDrop=False, fes=False, Kp=0, Kd=0):
+    def __init__(self, footDrop=False, fes=False, Kp=0, Kd=0, Ki=0):
         """
         :param N: number of gait cycles to simulate for 
         :param footDrop: boolean flag for foot drop simulation
@@ -48,12 +48,16 @@ class GaitSimulator:
         self.fes = fes 
         self.Kp = Kp 
         self.Kd = Kd 
+        self.Ki = Ki
 
         rest_length_soleus = soleus_length(np.pi/2)
         rest_length_tibialis = tibialis_length(np.pi/2)
 
         self.soleus = HillTypeMuscle(F_MAX_SOLEUS, .6*rest_length_soleus, .4*rest_length_soleus)
         self.tibialis = HillTypeMuscle(F_MAX_TIBIALIS, .6*rest_length_tibialis, .4*rest_length_tibialis)
+
+        self.total_error = 0
+        self.last_error = None
 
     # ******** CLASS METHODS ********
     def suffix(self):
@@ -65,20 +69,14 @@ class GaitSimulator:
             return "normal"
 
         
-    def get_soleus_activation(self, t, beta, d_beta, theta):
+    def get_soleus_activation(self, t):
         """
         :param t: current time 
-        :param beta: angle from foot to shank
-        :param theta: angle from shank to vertical
-        :param d_beta: derivative of beta
-        :param d_theta: derivative of theta
         :return the practical soleus activation for the type of simulation
         """
-        a = r.soleus_activation(t)[0]
+        return r.soleus_activation(t)[0]
 
-        return a
-
-    def get_tibialis_activation(self, t, beta, d_beta, theta):
+    def get_tibialis_activation(self, t, beta, theta):
         """
         :param t: current time 
         :param beta: angle from foot to shank
@@ -93,7 +91,7 @@ class GaitSimulator:
             a = 0
         if self.fes:
             # add excitation
-            a = a + self.get_tibialis_excitation(t, beta, d_beta, theta)
+            a = a + self.get_tibialis_excitation(t, beta, theta)
 
         return a
 
@@ -144,8 +142,8 @@ class GaitSimulator:
         K = r.knee_angle(t)
         theta = K - H
         
-        activation_tibialis = self.get_tibialis_activation(t, beta, d_beta, theta)
-        activation_soleus = self.get_soleus_activation(t, beta, d_beta, theta)
+        activation_tibialis = self.get_tibialis_activation(t, beta, theta)
+        activation_soleus = self.get_soleus_activation(t)
 
         # calculated
         l_soleus = soleus_length(beta)
@@ -161,7 +159,7 @@ class GaitSimulator:
         # derivative of state: 
         xd = [0, 0, 0, 0]
         xd[0] = d_beta
-        xd[1] = -(torque_tibant - torque_soleus - gravity_moment_ankle(beta, theta, H)) / 0.5
+        xd[1] = -(torque_tibant - torque_soleus - gravity_moment_ankle(beta, theta)) / I_ANKLE
         xd[2] = vm_soleus
         xd[3] = vm_tibialis
         return xd
@@ -243,8 +241,8 @@ class GaitSimulator:
         for t, b, d_b, th, ls, lt in zip(time, beta, d_beta, theta, soleus_norm_length_muscle, tibialis_norm_length_muscle):
             l_tendon_norm_soleus = self.soleus.norm_tendon_length(soleus_length(b), ls)
             l_tendon_norm_tibialis = self.tibialis.norm_tendon_length(tibialis_length(b), lt)
-            torque_soleus = force_length_tendon_single_val(l_tendon_norm_soleus) * F_MAX_SOLEUS * self.get_soleus_activation(t, b, d_b, th) * MOMENT_ARM_SOLEUS
-            torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * self.get_tibialis_activation(t, b, d_b, th) * MOMENT_ARM_TIBIALIS
+            torque_soleus = force_length_tendon_single_val(l_tendon_norm_soleus) * F_MAX_SOLEUS * self.get_soleus_activation(t) * MOMENT_ARM_SOLEUS
+            torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * self.get_tibialis_activation(t, b, th) * MOMENT_ARM_TIBIALIS
             
             soleus_moment.append(-torque_soleus)
             tibialis_moment.append(torque_tibant)
@@ -252,9 +250,9 @@ class GaitSimulator:
             toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
             excit_soleus.append(self.get_soleus_excitation(t, b, d_b, th))
             excit_tibialis.append(self.get_tibialis_excitation(t, b, d_b, th))
-            act_soleus.append(self.get_soleus_activation(t, b, d_b, th))
-            act_tibialis.append(self.get_tibialis_activation(t, b, d_b, th))
-            grav_ankle_moment.append(gravity_moment_ankle(b, th, r.hip_angle(t)))
+            act_soleus.append(self.get_soleus_activation(t))
+            act_tibialis.append(self.get_tibialis_activation(t, b, th))
+            grav_ankle_moment.append(gravity_moment_ankle(b, th))
 
         print("\nMuscle fatigue:")
         print("Soleus = {}".format(np.trapz(act_soleus)))
@@ -267,6 +265,7 @@ class GaitSimulator:
         plt.plot(time, theta, 'g')
         plt.legend(('foot-shank (beta)', 'shank-vertical (theta)'))
         plt.ylabel('Angle (rad)')
+        plt.xlabel('Time (s)')
         plt.tight_layout()
         plt.savefig("outputs/angles_{}.png".format(self.suffix()))
 
@@ -344,19 +343,14 @@ def tibialis_length(beta):
     return np.sqrt(difference[0]**2 + difference[1]**2)
 
 
-def gravity_moment_ankle(beta, theta, H):
+def gravity_moment_ankle(beta, theta):
     """
     :param theta: angle of foot relative to shank
     :param beta: angle of shank relative to vertical 
     :param t: current time in seconds 
     :return moment about ankle due to force of gravity on body
     """
-    torso_moment = MASS_TORSO*GRAVITY*(THIGH_LENGTH*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
-    foot_moment = MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.cos(beta - theta - np.pi/2)
-    shank_moment = MASS_SHANK*GRAVITY*D_COM_SHANK_ANKLE*np.sin(theta)
-    thigh_moment = MASS_THIGH*GRAVITY*(D_COM_THIGH_KNEE*np.sin(np.pi - H) + SHANK_LENGTH*np.sin(theta))
-    # return -foot_moment + (shank_moment + thigh_moment + thigh_moment)
-    return foot_moment
+    return MASS_FOOT*GRAVITY*D_COM_SHANK_ANKLE*np.cos(beta - theta - np.pi/2)
 
 
 def plot_regressions(t0, tf):
