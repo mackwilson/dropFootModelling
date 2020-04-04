@@ -3,6 +3,6 @@ import muscle
 
 GaitSimulator().simulate()
 
-GaitSimulator(True).simulate()
+GaitSimulator(footDrop=True).simulate()
 
-# GaitSimulator(True, True, 1, 1/10, 1/100)
+GaitSimulator(footDrop=True, fes=True, Kp=2, Kd=1/10, Ki=1/100).simulate()

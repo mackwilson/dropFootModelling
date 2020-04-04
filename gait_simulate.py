@@ -77,34 +77,41 @@ class GaitSimulator:
         """
         return r.soleus_activation(t)[0]
 
-    def get_tibialis_activation(self, t, beta, theta):
+    def get_tibialis_activation(self, t, beta):
         """
         :param t: current time 
         :param beta: angle from foot to shank
-        :param theta: angle from shank to vertical
-        :param d_beta: derivative of beta
-        :param d_theta: derivative of theta
-        :return the practical tibialis activation for the type of simulation
+        :return the resulting tibialis stimulation 
+        """
+        return self.get_natural_tibialis_activation(t) + self.get_tibialis_excitation(t, beta) 
+
+    def get_natural_tibialis_activation(self, t):
+        """
+        :param t: current time
+        :return the natural tibialis activation from the muscle for the type of simulation
         """
         scaler = 1
         if self.footDrop:
             # reduce by a certain amount
             scaler = 0.05
+        return r.tibialis_activation(t)*scaler
 
-        return r.tibialis_activation(t)*scaler + self.get_tibialis_excitation(t, beta, theta) 
-
-
-    def get_tibialis_excitation(self, t, beta, theta):
+    def get_tibialis_excitation(self, t, beta):
         """
         :param t: current time
         :param beta: angle from foot to shank, used to calculate error from desired trajectory
-        :param theta: angle from shank to vertical
         :return the applied excitation for the tibialis as an additional normalized activation  
         """
-        # TODO: complete
         if self.fes:
+            # apply excitation proportional to how much beta > pi/2 
+            # this should drive beta to pi/2 
+            err = beta - DESIRED_BETA_TRAJECTORY
+            self.last_error = err 
+            self.total_error = self.total_error + abs(err)
 
-            return 0.5
+            # ** do nothing if beta <= pi/2 **
+            if err > 0:
+                return self.Kp*err
 
         # if no fes, return 0 excitation applied
         return 0 
@@ -126,7 +133,7 @@ class GaitSimulator:
         K = r.knee_angle(t)
         theta = K - H
         
-        activation_tibialis = self.get_tibialis_activation(t, beta, theta)
+        activation_tibialis = self.get_tibialis_activation(t, beta)
         activation_soleus = self.get_soleus_activation(t)
 
         # calculated
@@ -164,7 +171,7 @@ class GaitSimulator:
         print("Foot Drop = {}".format(self.footDrop))
         print("FES = {}".format(self.fes))
         if(self.fes):
-            print("Kp = {}, Kd = {}".format(self.Kp, self.Kd))
+            print("Kp = {}, Kd = {}, Ki = {}".format(self.Kp, self.Kd, self.Ki))
 
         print("\nSimulating...")
         def f(t, x):
@@ -184,15 +191,13 @@ class GaitSimulator:
         h_ankle = HIP_HEIGHT - np.cos(np.pi - H0)*THIGH_LENGTH - SHANK_LENGTH*np.cos(th0)
         beta0 = np.pi - 1/np.cos(h_ankle/FOOT_LENGTH) + th0
 
-        plot_regressions(t0, CYCLE_PERIOD)
+        # plot_regressions(t0, CYCLE_PERIOD)
 
-        x0 = [beta0, 0, 1.1, 0.95] # TODO: initial values need to be determined 
+        x0 = [beta0, 0, 1.1, 0.95]
         sol = solve_ivp(
                         f, 
                         [t0, CYCLE_PERIOD], 
-                        x0, 
-                        # rtol=1e-5, 
-                        # atol=1e-8
+                        x0
                     )
 
         self.get_outputs(sol)
@@ -217,6 +222,7 @@ class GaitSimulator:
         act_soleus = []
         act_tibialis = []
         excit_tibialis = []
+        stim_tibialis = []
 
         print("Number of data points = {}".format(len(time)))
 
@@ -225,20 +231,26 @@ class GaitSimulator:
             l_tendon_norm_soleus = self.soleus.norm_tendon_length(soleus_length(b), ls)
             l_tendon_norm_tibialis = self.tibialis.norm_tendon_length(tibialis_length(b), lt)
             torque_soleus = force_length_tendon_single_val(l_tendon_norm_soleus) * F_MAX_SOLEUS * self.get_soleus_activation(t) * MOMENT_ARM_SOLEUS
-            torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * self.get_tibialis_activation(t, b, th) * MOMENT_ARM_TIBIALIS
+            torque_tibant = force_length_tendon_single_val(l_tendon_norm_tibialis) * F_MAX_TIBIALIS * self.get_tibialis_activation(t, b) * MOMENT_ARM_TIBIALIS
             
             soleus_moment.append(-torque_soleus)
             tibialis_moment.append(torque_tibant)
             ankle_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)))
             toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
-            excit_tibialis.append(self.get_tibialis_excitation(t, b, th))
+            excit_tibialis.append(self.get_tibialis_excitation(t, b))
             act_soleus.append(self.get_soleus_activation(t))
-            act_tibialis.append(self.get_tibialis_activation(t, b, th))
+            act_tibialis.append(self.get_natural_tibialis_activation(t))
+            stim_tibialis.append(self.get_tibialis_activation(t, b))
             grav_ankle_moment.append(gravity_moment_ankle(b, th))
 
         print("\nMuscle fatigue:")
         print("Soleus = {}".format(np.trapz(act_soleus)))
-        print("Tibialis Anterior = {}".format(np.trapz(act_tibialis)))
+        print("Tibialis Anterior = {}".format(np.trapz(stim_tibialis)))
+
+        if self.fes:
+            print("\nControl success:")
+            print("Total error (integral) = {} rads".format(self.total_error))
+            print("Steady state error = {} rads".format(self.last_error))
 
         # plot results 
         plt.figure()
@@ -250,6 +262,7 @@ class GaitSimulator:
         plt.xlabel('Time (s)')
         plt.tight_layout()
         plt.savefig("outputs/angles_{}.png".format(self.suffix()))
+        plt.close()
 
         plt.figure()
         plt.title("Moments around the ankle for {} simulation".format(self.suffix()))
@@ -263,6 +276,7 @@ class GaitSimulator:
         # plt.ylim(-3, 4)
         plt.tight_layout()
         plt.savefig("outputs/moments_{}.png".format(self.suffix()))
+        plt.close()
 
         plt.figure()
         plt.title("Height off the ground for {} simulation".format(self.suffix()))
@@ -274,17 +288,20 @@ class GaitSimulator:
         # plt.ylim(0, 0.5)
         plt.tight_layout()
         plt.savefig("outputs/heights_{}.png".format(self.suffix()))
+        plt.close()
 
         plt.figure()
         plt.title("Activations and excitations for {} simulation".format(self.suffix()))
-        plt.plot(time, act_tibialis, 'r')
         plt.plot(time, act_soleus, 'g')
+        plt.plot(time, act_tibialis, 'r')
         plt.plot(time, excit_tibialis, 'b')
-        plt.legend(("tibialis activation", "soleus activation", "tibialis excitation"))
+        plt.plot(time, stim_tibialis, 'k')
+        plt.legend(("soleus activation", "natural tibialis activation", "tibialis excitation", "total tibialis stimulation"))
         plt.ylabel("Activation as decimal")
         plt.xlabel("Time (s)")
         plt.tight_layout()
         plt.savefig("outputs/activations_{}.png".format(self.suffix()))
+        plt.close()
 
         plt.figure()
         plt.title("Normalized CE lengths for {} simulation".format(self.suffix()))
@@ -295,6 +312,7 @@ class GaitSimulator:
         plt.xlabel("Time (s)")
         plt.tight_layout()
         plt.savefig("outputs/lengths_{}.png".format(self.suffix()))
+        plt.close()
 
 
 
@@ -350,6 +368,7 @@ def plot_regressions(t0, tf):
     plt.xlabel("Time (s)")
     plt.title("Joint angles throughout gait from regression model")
     plt.savefig("outputs/regression_angle.png")
+    plt.close()
 
     plt.figure()
     plt.plot(t, r.hip_torque(t), 'r')
@@ -359,6 +378,7 @@ def plot_regressions(t0, tf):
     plt.xlabel("Time (s)")
     plt.title("Joint torques throughout gait from regression model")
     plt.savefig("outputs/regression_torque.png")
+    plt.close()
 
     plt.figure()
     plt.plot(t, r.tibialis_activation(t), 'r')
@@ -368,3 +388,4 @@ def plot_regressions(t0, tf):
     plt.xlabel("Time (s)")
     plt.title("Normalized activations for normal muscle from regression model")
     plt.savefig("outputs/regression_activation.png")
+    plt.close()
