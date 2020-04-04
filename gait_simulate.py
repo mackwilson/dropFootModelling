@@ -31,6 +31,7 @@ MASS_SHANK = 3.45 # kg
 MASS_THIGH = 8.45 # kg
 MASS_TORSO = 50.42 # kg 
 GRAVITY = 9.81 # N/kg
+DESIRED_BETA_TRAJECTORY = np.pi/2 # rad
 
 
 
@@ -85,42 +86,27 @@ class GaitSimulator:
         :param d_theta: derivative of theta
         :return the practical tibialis activation for the type of simulation
         """
-        a = r.tibialis_activation(t)
+        scaler = 1
         if self.footDrop:
             # reduce by a certain amount
-            a = 0
-        if self.fes:
-            # add excitation
-            a = a + self.get_tibialis_excitation(t, beta, theta)
+            scaler = 0.05
 
-        return a
+        return r.tibialis_activation(t)*scaler + self.get_tibialis_excitation(t, beta, theta) 
 
-    def get_soleus_excitation(self, t, beta, d_beta, theta):
+
+    def get_tibialis_excitation(self, t, beta, theta):
         """
         :param t: current time
-        :param beta: angle from foot to shank
+        :param beta: angle from foot to shank, used to calculate error from desired trajectory
         :param theta: angle from shank to vertical
-        :param Kp: proportional gain for excitation control
-        :param Kd: integrator gain for excitation control
-        :return the applied excitation for the soleus as an additional normalized activation  
-        """
-        # TODO: complete
-        if self.fes:
-            return 0.5
-        return 0
-
-    def get_tibialis_excitation(self, t, beta, d_beta, theta):
-        """
-        :param t: current time
-        :param beta: angle from foot to shank
-        :param theta: angle from shank to vertical
-        :param Kp: proportional gain for excitation control
-        :param Kd: integrator gain for excitation control
         :return the applied excitation for the tibialis as an additional normalized activation  
         """
         # TODO: complete
         if self.fes:
+
             return 0.5
+
+        # if no fes, return 0 excitation applied
         return 0 
 
 
@@ -128,9 +114,7 @@ class GaitSimulator:
     def dynamics(self, x, t):
         """
         :param x: state vector [ankle angle, angular velocity, soleus normalized CE length, TA normalized CE length]
-        :param soleus: soleus muscle (HillTypeModel)
-        :param tibialis: tibialis anterior muscle (HillTypeModel)
-        :param control: True if balance should be controlled
+        :param t: current time 
         :return: derivative of state vector, xd
         """
         # state 
@@ -232,7 +216,6 @@ class GaitSimulator:
         ankle_height = []
         act_soleus = []
         act_tibialis = []
-        excit_soleus = []
         excit_tibialis = []
 
         print("Number of data points = {}".format(len(time)))
@@ -248,8 +231,7 @@ class GaitSimulator:
             tibialis_moment.append(torque_tibant)
             ankle_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)))
             toe_height.append(HIP_HEIGHT - np.cos(np.pi - r.hip_angle(t))*THIGH_LENGTH - SHANK_LENGTH*np.cos(abs(th)) + FOOT_LENGTH*np.sin(np.pi/2 - b + th)) 
-            excit_soleus.append(self.get_soleus_excitation(t, b, d_b, th))
-            excit_tibialis.append(self.get_tibialis_excitation(t, b, d_b, th))
+            excit_tibialis.append(self.get_tibialis_excitation(t, b, th))
             act_soleus.append(self.get_soleus_activation(t))
             act_tibialis.append(self.get_tibialis_activation(t, b, th))
             grav_ankle_moment.append(gravity_moment_ankle(b, th))
@@ -298,8 +280,7 @@ class GaitSimulator:
         plt.plot(time, act_tibialis, 'r')
         plt.plot(time, act_soleus, 'g')
         plt.plot(time, excit_tibialis, 'b')
-        plt.plot(time, excit_soleus, 'k')
-        plt.legend(("tibialis activation", "soleus activation", "tibialis excitation", "soleus excitation"))
+        plt.legend(("tibialis activation", "soleus activation", "tibialis excitation"))
         plt.ylabel("Activation as decimal")
         plt.xlabel("Time (s)")
         plt.tight_layout()
